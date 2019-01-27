@@ -25,7 +25,7 @@
 
 <script>
 export default {
-  name: 'HelloWorld',
+  name: 'iscroll',
   data () {
     return {
       clientHeight: null,
@@ -77,6 +77,8 @@ export default {
     // document.getElementById("body").addEventListener("touchmove", function (e) {
     //   e.preventDefault();
     // });
+    var myScroll = new IScroll('#draw',{scrollX:true,scrollY:false});
+    console.log(myScroll)
   },
   methods: {
     click(text){

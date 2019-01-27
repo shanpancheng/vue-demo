@@ -4,7 +4,7 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import VConsole from 'vconsole/dist/vconsole.min.js' //import vconsole
-// let vConsole = new VConsole() // 初始化
+let vConsole = new VConsole() // 初始化
 Vue.config.productionTip = false
 
 /* eslint-disable no-new */

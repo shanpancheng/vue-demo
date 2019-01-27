@@ -12,9 +12,9 @@
       </div>
     </div>
     <div class="userInput" >
-      <div class="draw" id="draw" ref="draw">
-        <ul @touchstart="touchstart" @touchmove="touchmove" @touchend="touchend">
-          <li v-for="item in linkList" :key="item.id" @click="click(item.content)">{{item.content}}</li>
+      <div class="draw" id="draw">
+        <ul @touchstart.stop.prevent="touchstart" @touchmove.stop.prevent="touchmove" @touchend.stop.prevent="touchend">
+          <li v-for="item in linkList" :key="item.id">{{item.content}}</li>
         </ul>
       </div>
       <input type="text" placeholder="点击提问" v-model="issue" >
@@ -42,17 +42,7 @@ export default {
         {id:3,content:'服务中心查询'},
         {id:4,content:'人工客服'},
         {id:5,content:'在线服务'},
-        {id:6,content:'以旧换新'},
-        {id:7,content:'优享购'},
-        {id:8,content:'体验店查询'},
-        {id:9,content:'修改发票'},
-      ],
-      startX:0,
-      centerX:0,
-      maxRight:50,
-      maxLeft:0,
-      maxLeftBounce:0,
-      maxRightBounce:0,
+      ]
     }
   },
   watch: {
@@ -65,25 +55,14 @@ export default {
     }
   },
   mounted() {   
-    var _this = this
     this.initHeight()
     this.$nextTick(()=>{
       var container = this.$el.querySelector("#chatBoxes");
       container.scrollTop = container.scrollHeight;
     })
-    // window.onload = function(){
-      _this.setUlWidth()
-    // }
-    // document.getElementById("body").addEventListener("touchmove", function (e) {
-    //   e.preventDefault();
-    // });
+    this.setScroll()
   },
   methods: {
-    click(text){
-      
-      var requesParams = {'text':text, flag:'request'}
-      this.chatContent.push(requesParams)
-    },
     scrollToBottom() {
       this.$nextTick(()=>{
         var container = document.getElementById('chatBoxes')
@@ -101,68 +80,89 @@ export default {
       var requesParams = {'text':this.issue, flag:'request'}
       this.chatContent.push(requesParams)
     },
-    touchstart($event){
-      console.log(1)
-       
-      this.startX = $event.changedTouches[0].clientX;
-    },
-    touchmove($event) {
-      console.log(2)
-      var ul = this.$refs.draw.children[0]
-       // 清除过渡
+    // onFocus() {
+    //   this.$nextTick(()=>{
+    //     var container = document.getElementById('chatBoxes')
+    //     console.log(container)
+    //     container.scrollTop = container.scrollHeight;
+    //   })
+    //   // this.timer = setInterval( ()=> {      
+    //   //   document.body.scrollTop = document.body.scrollHeight    
+    //   // }, 100)
+    // },
+    // onBlur() {
+    //   // clearInterval(this.timer)
+    //   // document.body.scrollTop = document.body.scrollHeight
+    // }
+    setScroll(){
+      var draw = document.querySelector('#draw');
+    var ul = draw.children[0];
+    var ulLen = ul.children.length
+    var width = 0
+    for(var i = 0; i < ulLen;i++) {
+      console.log(ul.children[i].offsetWidth)
+      width += ul.children[i].offsetWidth
+    }
+    ul.style.width = width + ulLen*4+'px'
+    var startX = 0; // 刚触碰到屏幕的时的手指信息
+    var centerX = 0; // 用来记录每次触摸时上一次的偏移距离
+    var maxRight = 50; // 设定一个最大向右滑动的距离
+    var maxLeft = -(ul.offsetWidth - draw.offsetWidth + maxRight); // 求得一个最大向左滑动的距离
+    var maxLeftBounce = 0; // 向左反弹值
+    var maxRightBounce = -(ul.offsetWidth - draw.offsetWidth); // 向右反弹值
+
+    // touchstart 时，记录手指在 Y 轴上的落点距离可视顶部距离
+    ul.addEventListener('touchstart', function (e) {
+      startX = e.changedTouches[0].clientX;
+    })
+
+    // touchmove 时，记录此时手指在 Y 轴上的落点距离可视顶部距离
+    ul.addEventListener('touchmove', function (e) {
+      // 清除过渡
       ul.style.transition = 'none';
       // 获取差值
-      var dx = $event.changedTouches[0].clientX - this.startX;
+      var dx = e.changedTouches[0].clientX - startX;
+
       // 上次的滑动距离加上本次的滑动距离
-      var tempX = this.centerX + dx;
+      var tempX = centerX + dx;
+
       // 当上次滑动的距离加上本次滑动的距离 大于 设定的最大向下距离的时候
-      if (tempX > this.maxRight) {
-        tempX = this.maxRight;
+      if (tempX > maxRight) {
+        tempX = maxRight;
       }
       // 当上次滑动的距离加上本次滑动的距离 小于 设定的最大向上距离的时候 
-      else if (tempX < this.maxLeft) {
-        tempX = this.maxLeft;
-      } 
+      else if (tempX < maxLeft) {
+        tempX = maxLeft;
+      }
+
       // 设置 ul 在 Y 轴上的偏移
       ul.style.transform = 'translateX(' + tempX + 'px)';
-    },
-    touchend($event){
-      console.log(3)
-      var ul = this.$refs.draw.children[0]
+    })
+
+    // touchend 时，记录此时手指在 Y 轴上的落点距离可视顶部距离
+    ul.addEventListener('touchend', function (e) {
       // 获取差值
-      var dx = $event.changedTouches[0].clientX - this.startX;
+      var dx = e.changedTouches[0].clientX - startX;
       // 记录移动的距离
-      this.centerX = this.centerX + dx;
+      centerX = centerX + dx;
 
       // 两次滑动的距离 大于 设定的 向上 反弹值时
-      if (this.centerX > this.maxLeftBounce) {
+      if (centerX > maxLeftBounce) {
         // 让两次滑动的距离 等于 设置的值
-        this.centerX = this.maxLeftBounce;
+        centerX = maxLeftBounce;
         // 添加过渡
-        ul.style.transition = 'transform .1s';
-        ul.style.transform = 'translateX(' + this.centerX + 'px)';
+        ul.style.transition = 'transform .5s';
+        ul.style.transform = 'translateX(' + centerX + 'px)';
       }
       // 两次滑动的距离 小于 设定的 向下 反弹值时
-      else if (this.centerX < this.maxRightBounce) {
+      else if (centerX < maxRightBounce) {
         // 让两次滑动的距离 等于 设置的值
-        this.centerX = this.maxRightBounce;
+        centerX = maxRightBounce;
         // 添加过渡
-        ul.style.transition = 'transform .1s';
-        ul.style.transform = 'translateX(' + this.centerX + 'px)';
+        ul.style.transition = 'transform .5s';
+        ul.style.transform = 'translateX(' + centerX + 'px)';
       }
-    },
-    setUlWidth(){
-      var draw = this.$refs.draw;
-      var ul = draw.children[0];
-      var ulLen = ul.children.length
-      var width = 0
-      for(var i = 0; i < ulLen;i++) {
-        width += ul.children[i].offsetWidth
-      }
-      ul.style.width = width + (ulLen)*4+'px'
-      this.maxLeft = -(ul.offsetWidth - draw.offsetWidth + this.maxRight); // 求得一个最大向左滑动的距离
-      this.maxLeftBounce = 0; // 向左反弹值
-      this.maxRightBounce = -(ul.offsetWidth - draw.offsetWidth); // 向右反弹值
+    })
     }
   }
 }
@@ -173,7 +173,6 @@ export default {
 * {
   margin: 0;
   padding: 0;
-  touch-action: pan-y;
 }
 .onlineService {
   width: 100%;
@@ -270,18 +269,14 @@ export default {
 .draw ul {
   zoom: 1;
   height: 100%;
-  -webkit-overflow-scrolling:touch;
 }
 .draw li {
   list-style: none;
   float: left;
-  height: 30%;
+  height: 100%;
   text-align: center;
   padding: 10px 10px;
   border: 1px solid #ccc;
   margin-right: 4px;
-}
-.draw ul li:last-child {
-  margin-right: 0;
 }
 </style>
